@@ -52,75 +52,97 @@ class _FlightPlots:
         else:
             return -1
 
-    def trajectory_3d(self):  # pylint: disable=too-many-statements
+    def trajectory_3d(flight):  # Pass flight object directly
         """Plot a 3D graph of the trajectory
-
+    
+        Parameters
+        ----------
+        flight : Flight
+            The flight object containing trajectory data
+    
         Returns
         -------
         None
         """
-        max_z = max(self.flight.altitude[:, 1])
-        min_z = min(self.flight.altitude[:, 1])
-        max_x = max(self.flight.x[:, 1])
-        min_x = min(self.flight.x[:, 1])
-        max_y = max(self.flight.y[:, 1])
-        min_y = min(self.flight.y[:, 1])
+        # Access flight data directly from the flight object
+        max_z = max(flight.altitude[:, 1])
+        min_z = min(flight.altitude[:, 1])
+        max_x = max(flight.x[:, 1])
+        min_x = min(flight.x[:, 1])
+        max_y = max(flight.y[:, 1])
+        min_y = min(flight.y[:, 1])
         min_xy = min(min_x, min_y)
         max_xy = max(max_x, max_y)
-
-        # avoids errors when x_lim and y_lim are the same
+    
+        # Avoid errors when x_lim and y_lim are the same
         if abs(min_z - max_z) < 1e-5:
             max_z += 1
         if abs(min_xy - max_xy) < 1e-5:
             max_xy += 1
-
+    
         _ = plt.figure(figsize=(9, 9))
         ax1 = plt.subplot(111, projection="3d")
-        ax1.plot(
-            self.flight.x[:, 1], self.flight.y[:, 1], zs=min_z, zdir="z", linestyle="--"
+        
+        # Plot X-Y plane trajectory (top-down view)
+        xy_plane = ax1.plot(
+            flight.x[:, 1], flight.y[:, 1], zs=min_z, zdir="z", linestyle="--", label="X-Y Plane (Flat Ground) Projection"
         )
-        ax1.plot(
-            self.flight.x[:, 1],
-            self.flight.altitude[:, 1],
-            zs=min_y,
-            zdir="y",
-            linestyle="--",
+        
+        # Plot X-Altitude projection (side view along Y-axis)
+        x_alt_projection = ax1.plot(
+            flight.x[:, 1], flight.altitude[:, 1], zs=min_y, zdir="y", linestyle="--", label="Z-Altitude Projection"
         )
-        ax1.plot(
-            self.flight.y[:, 1],
-            self.flight.altitude[:, 1],
-            zs=min_x,
-            zdir="x",
-            linestyle="--",
+        
+        # Plot Y-Altitude projection (side view along Z-axis)
+        y_alt_projection = ax1.plot(
+            flight.y[:, 1], flight.altitude[:, 1], zs=min_x, zdir="x", linestyle="--", label="Y-Altitude Projection"
         )
-        ax1.plot(
-            self.flight.x[:, 1],
-            self.flight.y[:, 1],
-            self.flight.altitude[:, 1],
-            linewidth="2",
+        
+        # Plot full 3D trajectory
+        full_trajectory = ax1.plot(
+            flight.x[:, 1], flight.y[:, 1], flight.altitude[:, 1], linewidth="2", label="3D Trajectory"
         )
+        
+        # Starting point (black)
         ax1.scatter(
-            self.flight.x(0),
-            self.flight.y(0),
-            self.flight.z(0) - self.flight.env.elevation,
+            flight.x(0),
+            flight.y(0),
+            flight.z(0) - flight.env.elevation,
             color="black",
+            label="Launch Point"
         )
+        
+        # Ending point (red X marker)
         ax1.scatter(
-            self.flight.x(self.flight.t_final),
-            self.flight.y(self.flight.t_final),
-            self.flight.z(self.flight.t_final) - self.flight.env.elevation,
+            flight.x(flight.t_final),
+            flight.y(flight.t_final),
+            flight.z(flight.t_final) - flight.env.elevation,
             color="red",
             marker="X",
+            label="Landing Point"
         )
+        
+        # Set axis labels and title
         ax1.set_xlabel("X - East (m)")
         ax1.set_ylabel("Y - North (m)")
         ax1.set_zlabel("Z - Altitude Above Ground Level (m)")
         ax1.set_title("Flight Trajectory")
+        
+        # Set limits for the axes
         ax1.set_xlim(min_xy, max_xy)
         ax1.set_ylim(min_xy, max_xy)
         ax1.set_zlim(min_z, max_z)
+        
+        # Set view angle
         ax1.view_init(15, 45)
-        ax1.set_box_aspect(None, zoom=0.95)  # 95% for label adjustment
+        
+        # Adjust aspect ratio slightly for better label fit
+        ax1.set_box_aspect(None, zoom=0.95)
+        
+        # Add the legend
+        ax1.legend(loc='upper right')
+        
+        # Show the plot
         plt.show()
 
     def linear_kinematics_data(self):  # pylint: disable=too-many-statements
